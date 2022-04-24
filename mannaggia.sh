@@ -18,7 +18,6 @@
 # --spm <n> : numero di santi per minuto
 # --wall : invia l'output a tutte le console : attenzione , se non siete root o sudoers disattivare il flag -n
 # --nds <n> : numero di santi da invocare (di default continua all'infinito)
-# --nds <n> : numero di santi da invocare (di default continua all'infinito)
 # --shutdown : se nds > 0 e si e` root al termine delle invocazioni spegne
 # --off  : se si e` root invoca un solo santo e spegne (equivale a --nds 1 --shutdown)
 audioflag=false
@@ -36,24 +35,28 @@ DEFPLAYER="mplayer -cache 1024 -"
 PLAYER="${PLAYER:-$DEFPLAYER}"
 LC_CTYPE=C
 
-say() {
-	local IFS=+
-	mplayer -ao alsa -really-quiet -noconsolecontrols "http://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&q=$*&tl=it"
-}
-
-if [ $(uname) = "Darwin" ]
-	then
-	shufCmd=gshuf
+if [ "$(uname)" = "Darwin" ]; then
+	if command -v shuf >/dev/null 2>&1; then
+		shufCmd=shuf
 	else
+		shufCmd=gshuf
+	fi
+else
 	shufCmd=shuf
+	say() {
+		if command -v say >/dev/null; then
+			say "$1"
+		else
+			local IFS=+
+			mplayer -ao alsa -really-quiet -noconsolecontrols "http://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&q=$*&tl=it"
+		fi
+	}
 fi
 
 # lettura parametri da riga comando
-for parm in "$@"
-	do
+for parm in "$@"; do
 	# leggi dai parametri se c'e' l'audio
-	if [ "$parm" = "--audio" ]
-		then
+	if [ "$parm" = "--audio" ]; then
 		# non facciamo stronzate
 		which "$(echo "$PLAYER" | awk '{print $1}')" >/dev/null 2>&1 || {
 			echo "Ok, vuoi l'audio, ma il player dove sta?" >&2
@@ -63,20 +66,17 @@ for parm in "$@"
 	fi
 
 	# leggi dai parametri se c'e' da mandare i commenti su wall
-	if [ "$parm" = "--wall" ]
-		then
+	if [ "$parm" = "--wall" ]; then
 		wallflag=true
 	fi
 
 	# se spmflag
 	# imposta i santi per minuto e resetta il flag
-	if [ "$spmflag" = true ]
-		then
-		if [ "$parm" -lt 1 ]
-			then
+	if [ "$spmflag" = true ]; then
+		if [ "$parm" -lt 1 ]; then
 			spm=1
 			spmflag=false
-			else
+		else
 			spm=$((60 / parm))
 			spmflag=false
 		fi
@@ -84,72 +84,68 @@ for parm in "$@"
 
 	# se parm = --spm
 	# setta il flag spmflag
-	if [ "$parm" = "--spm" ]
-		then
+	if [ "$parm" = "--spm" ]; then
 		spmflag=true
 	fi
 
 	# se ndsflag
 	# imposta il numero di santi da ciclare
-	if [ "$ndsflag" = true ]
-		then
+	if [ "$ndsflag" = true ]; then
 		nds="$parm"
 		ndsflag=false
 	fi
 
 	# se parm = --nds
 	# setta il flag ndsflag
-	if [ "$parm" = "--nds" ]
-		then
+	if [ "$parm" = "--nds" ]; then
 		ndsflag=true
 	fi
 
 	# dipende da --nds
-	if [ "$parm" = "--shutdown" ]
-			then
-			shutdown=true
+	if [ "$parm" = "--shutdown" ]; then
+		shutdown=true
 	fi
 
 	# imposta off su true, successivamente nds viene sovrascritto a 1
-	if [ "$parm" = "--off" ]
-			then 
-			off=true
+	if [ "$parm" = "--off" ]; then
+		off=true
 	fi
 
 done
 
-if [ $off = true ]
-		then
-		shutdown=true
-		nds=1
+if [ $off = true ]; then
+	shutdown=true
+	nds=1
 fi
-while [ "$nds" != 0 ]
-	do
-	# shellcheck disable=SC2019
-	MANNAGGIA="Mannaggia $(curl -s "www.santiebeati.it/$(</dev/urandom tr -dc A-Z|head -c1)/"|grep -a tit|cut -d'>' -f 4-9| sed '/^.$/d' | $shufCmd -n1 |awk -F "$DELSTRING1" '{print$1$2}'|awk -F "$DELSTRING2" '{print$1}' | iconv -f ISO-8859-1)"
-	if [ "$wallflag" = true ]
-		then
-		pot=$(( nds % 50 ))
-		if [ "$pot" = 0 ]
-			then
+while [ "$nds" != 0 ]; do
+	# Get a random swear word from opt
+	RANDOM=$$
+	opt="Mannaggia_a Porco La_miseria_di Vaffanculo Quel_mona_di_un"
+	len=$(echo "$opt" | tr " " "\n" | wc -l)
+	item=$((($(od -vAn -N4 -t u4 </dev/urandom) % len) + 1))
+	word=$(echo "$opt" | tr " " "\n" | sed "s/_/ /g" | sed -n "$item"p)
+
+	MANNAGGIA="$word $(curl -s "www.santiebeati.it/$(tr </dev/urandom -dc A-Z | head -c1)/" | grep -a tit | cut -d'>' -f 4-9 | sed '/^.$/d' | $shufCmd -n1 | awk -F "$DELSTRING1" '{print$1$2}' | awk -F "$DELSTRING2" '{print$1}' | iconv -f ISO-8859-1)"
+	MANNAGGIA=$(echo "$MANNAGGIA" | sed 's/  <FONT SIZE=\"-1\"><b>/ /g' | sed -E "s/ \((.*)\)//g")
+	if [ "$wallflag" = true ]; then
+		pot=$((nds % 50))
+		if [ "$pot" = 0 ]; then
 			echo "systemd merda, poettering vanaglorioso fonte di danni, ti strafulmini santa cunegonda bipalluta protrettice dei VUA"
-			else
+		else
 			# attenzione: se non siete root o sudoers dovete togliere dalla riga successiva "sudo" e "-n"
 			echo "$MANNAGGIA" | sudo wall -n
 		fi
-		else
-		echo "$MANNAGGIA" > /dev/stdout
+	else
+		echo "$MANNAGGIA" >/dev/stdout
 	fi
-	if [ "$audioflag" = true ]
-		then
-		say $MANNAGGIA 2>/dev/null
+	if [ "$audioflag" = true ]; then
+		say "$MANNAGGIA" 2>/dev/null
 	fi
 
 	sleep "$spm"
 	nds=$((nds - 1))
 done
 
-if [ $shutdown = true -a $UID = 0 ]
-		then
-		halt
+if [ $shutdown = true -a $UID = 0 ]; then
+	halt
 fi

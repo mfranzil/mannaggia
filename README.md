@@ -7,8 +7,6 @@ it's developed in italian, it can be easily adapted in other languages.
 
 requires mplayer to use the --audio parameters
 
-
-
 Questo script provvede a nominare tutti i santi per voi quando vi sentite depressi.
 
 Prerequisiti:

@@ -1,42 +1,58 @@
-mannaggia.sh
-=========
+# Mannaggia
 
-Automatic saint invocation for depressed Veteran Unix Admins,
+Automatic italian swearer. Supports the following features:
 
-it's developed in italian, it can be easily adapted in other languages.
+- use "mannaggia" saint invocations or actual italian swear words (offensive!)
+- let the terminal read such invocations for you (with `say` or `mplayer`)
+- choose the number of invocations per minute
+- automatically display all the invocations on all active terminals
 
-requires mplayer to use the --audio parameters
+## Getting started
 
-Questo script provvede a nominare tutti i santi per voi quando vi sentite depressi.
+### macOS
 
-Prerequisiti:
-* mplayer per potere usare il parametro --audio
+On macOS, no additional steps are required. Simply install the package and run the command `mannaggia`.
 
-parametri da command line:
-* --audio : attiva mplayer per fargli pronunciare i santi
-* --spm <n> : numero di santi per minuto
-* --wall : invia l'output a tutte le console : attenzione , se non siete root o sudoers disattivare il flag -n
-* --shutdown : se si e' root spegne il computer dopo aver finito di invocare sant (dipende da --nds)
-* --off : equivalente a --nds 1 --shutdown
+### Linux/WSL
 
-Rilasciato sotto Licenza GNU-GPL v.3
+On Linux environments, you need to install the `mplayer` package using the package manager of your choice (or by source, nobody is preventing you from doing that).
 
-idea originale by Alexiobash dallo script incazzatore.sh
+### Windows
 
-ampliata, riscritta e mantenuta da Pietro "Legolas" Suffritti
+Windows is not yet supported, but you can still `mannaggia` using WSL.
 
-convertita in mannaggia.sh rel 0.2
+```plaintext
+mannaggia [options]
+
+--angry     uses actual italian swear words
+--audio     uses `mplayer` to read the invocations
+--spm <n>   sets the number of invocations per minute
+--wall      displays the invocations on all active terminals
+--nds <n>   number of invocations per minute (default: infinite)
+--shutdown  if nds > 0 and root, shuts down the computer after nds invocations
+--off       if root, shuts down the computer immediately (equivalent to --nds 1 --shutdown)
+```
+
+## Credits
+
+Original idea by Alexiobash from `incazzatore.sh`. Expanded, rewritten and maintained by Pietro "Legolas" Suffritti. Further converted in `mannaggia.sh v0.2`. Current version expanded and rewritten by Matteo Franzil.
+
+This project is released under the GPLv3 license. See the LICENCE file for more details.
 
 Collaborators:
-* Enrico "Henryx" Bianchi
-* Alessandro "Aleskandro" Di Stefano
-* Davide "kk0nrad" Corrado
 
-patcher e contributors:
-* Marco Placidi
-* Maurizio "Tannoiser" Lemmo
-* Matteo Panella
-* Mattia Munari
-* Paolo Fabbri
+- Enrico "Henryx" Bianchi
+- Alessandro "Aleskandro" Di Stefano
+- Davide "kk0nrad" Corrado
 
-thanks to : Veteran Unix Admins group on Facebook
+Patchers and contributors:
+
+- Marco Placidi
+- Maurizio "Tannoiser" Lemmo
+- Matteo Panella
+- Mattia Munari
+- Paolo Fabbri
+
+Thanks to:
+
+- Veteran Unix Admins group on Facebook

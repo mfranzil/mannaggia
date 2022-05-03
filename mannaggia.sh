@@ -1,27 +1,4 @@
 #!/bin/sh
-############################################################
-# Mannaggiatore automatico per VUA depressi
-# idea originale by Alexiobash dallo script incazzatore.sh
-# ampliata, riscritta e mantenuta da Pietro "Legolas" Suffritti
-# convertita in mannaggia.sh rel 0.2
-# Collaborators:
-# Enrico "Henryx" Bianchi, Alessandro "Aleskandro" Di Stefano,
-# Davide "kk0nrad" Corrado
-# patcher e contributors:
-# Marco Placidi, Maurizio "Tannoiser" Lemmo, Matteo Panella
-# Mattia Munari
-# thanks to : Veteran Unix Admins group on Facebook
-# released under GNU-GPLv3
-############################################################
-# parametri da command line:
-# --angry: usa vere bestemmie
-# --audio : attiva mplayer per fargli pronunciare i santi
-# --spm <n> : numero di santi per minuto
-# --wall : invia l'output a tutte le console : attenzione , se non siete root o sudoers disattivare il flag -n
-# --nds <n> : numero di santi da invocare (di default continua all'infinito)
-# --shutdown : se nds > 0 e si e` root al termine delle invocazioni spegne
-# --off  : se si e` root invoca un solo santo e spegne (equivale a --nds 1 --shutdown)
-
 ANGRY_ENABLED=false
 
 AUDIO_ENABLED=false
@@ -45,7 +22,11 @@ DEFPLAYER="mplayer -cache 1024 -"
 PLAYER="${PLAYER:-$DEFPLAYER}"
 LC_CTYPE=C
 
-if [ "$(uname)" = "Darwin" ]; then
+if [ -z "$PLATFORM" ]; then
+	PLATFORM=$(uname -s)
+fi
+
+if [ "$PLATFORM" = 'Darwin' ] || [ "$PLATFORM" = 'mac' ]; then
 	if ! command -v shuf >/dev/null 2>&1; then
 		if ! command -v gshuf >/dev/null 2>&1; then
 			echo "WARNING: Mannaggia requires shuf to work. Please install it."
@@ -153,8 +134,11 @@ while [ "$NDS" != 0 ]; do
 		if [ "$POT" = 0 ]; then
 			echo "systemd merda, poettering vanaglorioso fonte di danni, ti strafulmini santa cunegonda bipalluta protrettice dei VUA"
 		else
-			# attenzione: se non siete root o sudoers dovete togliere dalla riga successiva "sudo" e "-n"
-			echo "$mannaggia" | sudo wall -n
+			if sudo -n true 2>/dev/null; then
+				echo "$mannaggia" | wall
+			else
+				echo "$mannaggia" | sudo wall -n
+			fi
 		fi
 	else
 		echo "$mannaggia" >/dev/stdout
@@ -167,6 +151,6 @@ while [ "$NDS" != 0 ]; do
 	NDS=$((NDS - 1))
 done
 
-if [ $SHUTDOWN = true -a $UID = 0 ]; then
+if [ $SHUTDOWN = true ] && [ $UID = 0 ]; then
 	halt
 fi

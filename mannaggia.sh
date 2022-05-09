@@ -18,9 +18,9 @@ OFF=false
 
 SHUF_CMD="shuf"
 
-DEFPLAYER="mplayer -cache 1024 -"
-PLAYER="${PLAYER:-$DEFPLAYER}"
 LC_CTYPE=C
+
+__UID=$(id -u)
 
 if [ -z "$PLATFORM" ]; then
 	PLATFORM=$(uname -s)
@@ -30,20 +30,25 @@ if [ "$PLATFORM" = 'Darwin' ] || [ "$PLATFORM" = 'mac' ]; then
 	if ! command -v shuf >/dev/null 2>&1; then
 		if ! command -v gshuf >/dev/null 2>&1; then
 			echo "WARNING: Mannaggia requires shuf to work. Please install it."
-			exit 2
+			exit 255
 		else
 			SHUF_CMD=gshuf
 		fi
 	fi
 else
-	say() {
-		if command -v say >/dev/null; then
-			say "$1"
-		else
+	if command -v say >/dev/null; then
+		talk() {
+			say "$@"
+		}
+	elif command -v mplayer >/dev/null; then
+		talk() {
 			IFS=+
-			mplayer -ao alsa -really-quiet -noconsolecontrols "http://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&q=$*&tl=it"
-		fi
-	}
+			mplayer -ao alsa -really-quiet -noconsolecontrols "http://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&q=$1&tl=it"
+		}
+	else
+		echo "Mannaggia requires an audio player to work. Please install mplayer." >&2
+		exit 255
+	fi
 fi
 
 # lettura parametri da riga comando
@@ -55,10 +60,6 @@ for parm in "$@"; do
 
 	# leggi dai parametri se c'e' l'audio
 	if [ "$parm" = "--audio" ]; then
-		which "$(echo "$PLAYER" | awk '{print $1}')" >/dev/null 2>&1 || {
-			echo "Mannaggia requires an audio player to work. Please install mplayer." >&2
-			exit 255
-		}
 		AUDIO_ENABLED=true
 	fi
 
@@ -107,7 +108,6 @@ for parm in "$@"; do
 	if [ "$parm" = "--off" ]; then
 		OFF=true
 	fi
-
 done
 
 if [ "$OFF" = true ]; then
@@ -116,23 +116,37 @@ if [ "$OFF" = true ]; then
 fi
 
 while [ "$NDS" != 0 ]; do
-	# Get a random swear word from opt
-	opt="Mannaggia_a Porco La_miseria_di Vaffanculo Quel_mona_di_un"
-	len=$(echo "$opt" | tr " " "\n" | wc -l)
-	item=$((($(od -vAn -N4 -t u4 </dev/urandom) % len) + 1))
-	word=$(echo "$opt" | tr " " "\n" | sed "s/_/ /g" | sed -n "$item"p)
+	# Get a random swear word from prefix
+	prefix="Mannaggia_a Porco La_miseria_di Vaffanculo Quel_mona_di_un"
+	suffix="maiale suino"
+
+	random=$(awk 'BEGIN { srand(); print int(rand()*32768) }' /dev/null)
+	suffix_word=""
+	prefix_word=""
+
+	if [ "$random" -gt $((32768 / 2)) ]; then
+		len=$(echo "$prefix" | tr " " "\n" | wc -l)
+		item=$((($(od -vAn -N4 -t u4 </dev/urandom) % len) + 1))
+		prefix_word=$(echo "$prefix" | tr " " "\n" | sed "s/_/ /g" | sed -n "$item"p)
+		prefix_word="$prefix_word "
+	else
+		len=$(echo "$suffix" | tr " " "\n" | wc -l)
+		item=$((($(od -vAn -N4 -t u4 </dev/urandom) % len) + 1))
+		suffix_word=$(echo "$suffix" | tr " " "\n" | sed "s/_/ /g" | sed -n "$item"p)
+		suffix_word=" $suffix_word"
+	fi
 
 	# If angry mode on, change
 	if [ "$ANGRY_ENABLED" = "true" ]; then
 		mannaggia=$(base64 --decode bestemmie.b64 | $SHUF_CMD | head -n 1)
 	else
-		mannaggia="${word} $($SHUF_CMD mannaggia.dat | head -n 1)"
+		mannaggia="${prefix_word}$($SHUF_CMD mannaggia.dat | head -n 1)${suffix_word}"
 	fi
 
 	if [ "$WALL_ENABLED" = true ]; then
 		POT=$((NDS % 50))
 		if [ "$POT" = 0 ]; then
-			echo "systemd merda, poettering vanaglorioso fonte di danni, ti strafulmini santa cunegonda bipalluta protrettice dei VUA"
+			echo "Systemd merda, poettering vanaglorioso fonte di danni, ti strafulmini santa cunegonda bipalluta protrettice dei VUA"
 		else
 			if sudo -n true 2>/dev/null; then
 				echo "$mannaggia" | wall
@@ -144,13 +158,13 @@ while [ "$NDS" != 0 ]; do
 		echo "$mannaggia" >/dev/stdout
 	fi
 	if [ "$AUDIO_ENABLED" = true ]; then
-		say "$mannaggia" 2>/dev/null
+		talk "$mannaggia" 2>/dev/null
 	fi
 
 	sleep "$SPM"
 	NDS=$((NDS - 1))
 done
 
-if [ $SHUTDOWN = true ] && [ $UID = 0 ]; then
+if [ $SHUTDOWN = true ] && [ "$__UID" = 0 ]; then
 	halt
 fi
